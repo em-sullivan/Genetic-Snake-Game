@@ -3,11 +3,16 @@ Simple snake game
 '''
 import sys
 import pygame
+import math
 from pygame.locals import *
 
+# Game configurations
+WIDTH = 480
+HEIGHT = 480
+GRID_D = 15
+BLOCK_W = WIDTH / GRID_D
+BLOCK_H = HEIGHT / GRID_D
 
-WIDTH = 600
-HEIGHT = 400
 
 class Snake:
     '''
@@ -15,7 +20,7 @@ class Snake:
     '''
     def __init__(self):
         self.x, self.y = 0,0
-        self.speed = 0.5
+        self.speed = 1
         self.length = 1
         self.color = (0, 255, 255)
 
@@ -32,8 +37,10 @@ class Snake:
         self.y = self.y + self.speed
 
     def draw(self, surface):
-        block = pygame.Rect((self.x, self.y), (20, 20))
+        block = pygame.Rect((self.x, self.y), (BLOCK_W, BLOCK_H))
         pygame.draw.rect(surface, self.color, block)
+
+
 
 
 class App:
@@ -59,7 +66,14 @@ class App:
         pass
     
     def on_render(self):
-        self._display_surf.fill((0,0,0))
+        self._display_surf.fill((0,124,0))
+        
+        for i in range(0, int(GRID_D)):
+            for j in range(0, int(GRID_D)):
+                if (i + j) % 2 == 0:
+                    block = pygame.Rect(((j * BLOCK_W, i * BLOCK_H), (BLOCK_W, BLOCK_H)))
+                    pygame.draw.rect(self._display_surf, (0, 200, 0), block)
+
         self.snake.draw(self._display_surf)
         pygame.display.update()
         pass
@@ -77,7 +91,7 @@ class App:
             key = pygame.key.get_pressed()
 
             if key[K_RIGHT]:
-                if (self.snake.x < self.width - 20):
+                if (self.snake.x < self.width - BLOCK_W):
                     self.snake.move_right()
             elif key[K_LEFT]:
                 if (self.snake.x > 0):
@@ -86,7 +100,7 @@ class App:
                 if (self.snake.y > 0):
                     self.snake.move_up()
             elif key[K_DOWN]:
-                if (self.snake.y < self.height - 20):
+                if (self.snake.y < self.height - BLOCK_H):
                     self.snake.move_down()
             
             for event in pygame.event.get():
