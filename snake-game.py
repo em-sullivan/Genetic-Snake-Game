@@ -23,9 +23,11 @@ class Snake:
         self.y.append(HEIGHT/2)
 
         self.speed = BLOCK_W
-        self.length = 6
+        self.length = 10
         self.direction = 0
         self.color = (0, 255, 255)
+        self.score = 0
+        self.alive = True
 
         # For testing movement
         for i in range(0, self.length - 1):
@@ -35,10 +37,12 @@ class Snake:
 
     def update(self):
 
+        # Update Snake body
         for i in range(self.length-1, 0, -1):
             self.x[i] = self.x[i-1]
             self.y[i] = self.y[i-1]
 
+        # Update head position
         if self.direction == 0:
             self.x[0] = self.x[0] + self.speed
         elif self.direction == 1:
@@ -59,7 +63,15 @@ class Snake:
 
     def move_down(self):
         self.direction = 3
-
+    
+    def collision(self):
+        # May change how this works later, checks if snake goes
+        # out of bound
+        if self.x[0] < 0 or self.x[0] > WIDTH:
+            self.alive = False
+        if self.y[0] < 0 or self.y[0] > HEIGHT:
+            self.alive = False
+            
     def draw(self, surface):
         for i in range(0, self.length):
             block = pygame.Rect((self.x[i], self.y[i]), (BLOCK_W, BLOCK_H))
@@ -90,7 +102,7 @@ class App:
             self._running = False
     
     def on_loop(self):
-        pass
+        self.snake.collision()
     
     def on_render(self):
         self._display_surf.fill((0,124,0))
@@ -135,6 +147,8 @@ class App:
             self.on_loop()
             self.on_render()
             self.clock.tick(10)
+            if self.snake.alive == False:
+                break
 
         self.on_cleanup()
  
