@@ -161,13 +161,17 @@ class App:
             key = pygame.key.get_pressed()
 
             if key[K_RIGHT]:
-                self.snake.move_right()
+                if self.snake.direction != 1:
+                    self.snake.move_right()
             elif key[K_LEFT]:
-                self.snake.move_left()
+                if self.snake.direction != 0:
+                    self.snake.move_left()
             elif key[K_UP]:
-                self.snake.move_up()
+                if self.snake.direction != 3:
+                    self.snake.move_up()
             elif key[K_DOWN]:
-                self.snake.move_down()
+                if self.snake.direction != 2:
+                    self.snake.move_down()
             
             self.snake.update()
             for event in pygame.event.get():
