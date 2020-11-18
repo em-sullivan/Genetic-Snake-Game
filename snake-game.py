@@ -1,14 +1,14 @@
 '''
 Simple snake game
 '''
-import sys
+import random
 import pygame
 from pygame.locals import *
 
 # Game configurations
 WIDTH = 480
 HEIGHT = 480
-GRID_D = 20
+GRID_D = 12
 BLOCK_W = WIDTH / GRID_D
 BLOCK_H = HEIGHT / GRID_D
 
@@ -23,7 +23,7 @@ class Snake:
         self.y.append(HEIGHT/2)
 
         self.speed = BLOCK_W
-        self.length = 10
+        self.length = 3
         self.direction = 0
         self.color = (0, 255, 255)
         self.score = 0
@@ -31,7 +31,6 @@ class Snake:
 
         # For testing movement
         for i in range(0, self.length - 1):
-            print(self.x[i])
             self.x.append(self.x[i] - BLOCK_W)
             self.y.append(HEIGHT/2)
 
@@ -67,17 +66,46 @@ class Snake:
     def collision(self):
         # May change how this works later, checks if snake goes
         # out of bound
-        if self.x[0] < 0 or self.x[0] > WIDTH:
+        if self.x[0] < 0 or self.x[0] > WIDTH - BLOCK_W:
             self.alive = False
-        if self.y[0] < 0 or self.y[0] > HEIGHT:
+        if self.y[0] < 0 or self.y[0] > HEIGHT - BLOCK_H:
             self.alive = False
-            
+
+        for i in range(1, self.length):
+            if self.x[0] == self.x[i]:
+                if self.y[0] == self.y[i]:
+                    self.alive = False
+
+    def eat(self, fruit):
+        if (self.x[0] == fruit.pos[0] and self.y[0] == fruit.pos[1]):
+            print("Hit!")
+            self.x.append(fruit.pos[0])
+            self.y.append(fruit.pos[1])
+            self.length = self.length + 1
+            fruit.random_generate()
+
     def draw(self, surface):
         for i in range(0, self.length):
             block = pygame.Rect((self.x[i], self.y[i]), (BLOCK_W, BLOCK_H))
             pygame.draw.rect(surface, self.color, block)
 
 
+class Fruit:
+    '''
+    Fruit for snake to eat
+    '''
+    def __init__(self):
+        self.pos =[0, 0]
+        self.color = (255, 0, 0)
+        self.random_generate()
+
+    def random_generate(self):
+        self.pos[0] = random.randint(0, GRID_D - 1) * BLOCK_W
+        self.pos[1] = random.randint(0, GRID_D - 1) * BLOCK_H
+
+    def draw(self, surface):
+        apple = pygame.Rect((self.pos[0], self.pos[1]), (BLOCK_W, BLOCK_H))
+        pygame.draw.rect(surface, self.color, apple)
 
 
 class App:
@@ -90,6 +118,7 @@ class App:
         self.size = self.width, self.height = WIDTH, HEIGHT
         self.clock = None
         self.snake = Snake()
+        self.fruit = Fruit()
  
     def on_init(self):
         pygame.init()
@@ -103,6 +132,7 @@ class App:
     
     def on_loop(self):
         self.snake.collision()
+        self.snake.eat(self.fruit)
     
     def on_render(self):
         self._display_surf.fill((0,124,0))
@@ -115,8 +145,8 @@ class App:
                     pygame.draw.rect(self._display_surf, (0, 200, 0), block)
 
         self.snake.draw(self._display_surf)
+        self.fruit.draw(self._display_surf)
         pygame.display.update()
-        pass
     
     def on_cleanup(self):
         pygame.quit()
@@ -143,7 +173,6 @@ class App:
             for event in pygame.event.get():
                 self.on_event(event)
 
-            print(self.snake.x, self.snake.y)
             self.on_loop()
             self.on_render()
             self.clock.tick(10)
