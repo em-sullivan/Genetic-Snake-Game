@@ -36,30 +36,22 @@ class Snake:
     def update(self):
 
         # Update Snake body
-        temp = []
         for i in range(self.length-1, 0, -1):
-            temp.insert(0, self.position[i - 1])
-        
+            self.position[i][0] = self.position[i-1][0]
+            self.position[i][1] = self.position[i-1][1]    
 
         # Update head position
         if self.direction == 0:
-            #self.x[0] = self.x[0] + self.speed
-            #self.position[0][0] += self.speed
-            temp.insert(0, [self.position[0][0] + self.speed, self.position[0][1]])
+            self.position[0][0] += self.speed
+
         elif self.direction == 1:
-            #self.x[0] = self.x[0] - self.speed
-            #self.position[0][0] -= self.speed
-            temp.insert(0, [self.position[0][0] - self.speed, self.position[0][1]])
+            self.position[0][0] -= self.speed
+
         elif self.direction == 2:
-            #self.y[0] = self.y[0] - self.speed
-            #self.position[0][1] -= self.speed
-            temp.insert(0, [self.position[0][0], self.position[0][1] - self.speed])
+            self.position[0][1] -= self.speed
+
         elif self.direction == 3:
-            #self.y[0] = self.y[0] + self.speed
-            #self.position[0][1] += self.speed
-            temp.insert(0, [self.position[0][0], self.position[0][1] + self.speed])
-        
-        self.position = temp
+            self.position[0][1] += self.speed
         
     def move_right(self):
         self.direction = 0
@@ -74,36 +66,42 @@ class Snake:
         self.direction = 3
       
     def collision(self):
-        # May change how this works later, checks if snake goes
-        # out of bound
-        x = self.position[0][0]
-        y = self.position[0][1]
-        if x < 0 or x > WIDTH - BLOCK_W:
+        # Checks if snake hit boarder
+        if self.position[0][0] < 0 or self.position[0][0] > WIDTH - BLOCK_W:
             self.alive = False
-        if y < 0 or y > HEIGHT - BLOCK_H:
+        if self.position[0][1] < 0 or self.position[0][1] > HEIGHT - BLOCK_H:
             self.alive = False
 
         # Checks if snake hit itself
         if self.position.count(self.position[0]) > 1:
             self.alive = False
-        #for i in range(1, self.length):
-        #    if x == self.position[i][0]:
-        #        if y == self.position[i][1]:
-        #            self.alive = False
+       
 
     def eat(self, fruit):
+        
+        # Checks if head is going to eat fruit
         x = self.position[0][0]
         y = self.position[0][1]
+        if (self.direction == 0):
+            x += self.speed
+        elif (self.direction == 1):
+            x -= self.speed
+        elif (self.direction == 2):
+            y -= self.speed
+        elif (self.direction == 3):
+            y += self.speed
+
+        # Extends body if fruit is eaten
         if (x == fruit.pos[0] and y == fruit.pos[1]):
             self.position.append([fruit.pos[0], fruit.pos[1]])
-            self.length = self.length + 1
+            self.length += 1
+            self.score += 1
             
+            # Randomly genereate new fruit on board, make sure it
+            # is not on the snake body
             while True:
                 fruit.random_generate()
-                print("Fruit:", fruit.pos)
-                print("Snake:", self.position)
-                print(self.position.count(fruit.pos))
-                if self.position.count(fruit.pos) == 0:
+                if fruit.pos not in self.position:
                     break
 
     def draw(self, surface):
@@ -154,7 +152,10 @@ class App:
     
     def on_loop(self):
         self.snake.collision()
+        if self.snake.alive is False:
+            return
         self.snake.eat(self.fruit)
+        self.snake.update()
     
     def on_render(self):
         self._display_surf.fill((0,124,0))
@@ -166,8 +167,9 @@ class App:
                     block = pygame.Rect(((j * BLOCK_W, i * BLOCK_H), (BLOCK_W, BLOCK_H)))
                     pygame.draw.rect(self._display_surf, (0, 200, 0), block)
 
-        self.snake.draw(self._display_surf)
+        # Draw sanke and fruit
         self.fruit.draw(self._display_surf)
+        self.snake.draw(self._display_surf)
         pygame.display.update()
     
     def on_cleanup(self):
@@ -200,12 +202,15 @@ class App:
 
             self.on_loop()
             self.on_render()
-            self.snake.update()
             self.clock.tick(11)
+
+            # Quite when snake dies
             if self.snake.alive == False:
                 break
 
+        # Clean up and print score
         self.on_cleanup()
+        print(int(self.snake.score))
  
 if __name__ == "__main__" :
     theApp = App()
