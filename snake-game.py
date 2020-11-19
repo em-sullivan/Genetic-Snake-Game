@@ -3,6 +3,7 @@ Simple snake game
 '''
 import random
 import pygame
+import numpy as np
 from pygame.locals import *
 
 # Game configurations
@@ -18,9 +19,8 @@ class Snake:
     Player class
     '''
     def __init__(self):
-        self.x, self.y = [], []
-        self.x.append(WIDTH/2)
-        self.y.append(HEIGHT/2)
+        self.position = []
+        self.position.append([WIDTH/2, HEIGHT/2])
 
         self.speed = BLOCK_W
         self.length = 3
@@ -31,26 +31,36 @@ class Snake:
 
         # For testing movement
         for i in range(0, self.length - 1):
-            self.x.append(self.x[i] - BLOCK_W)
-            self.y.append(HEIGHT/2)
+            self.position.append([self.position[i][0] - BLOCK_W, HEIGHT/2])
 
     def update(self):
 
         # Update Snake body
+        temp = []
         for i in range(self.length-1, 0, -1):
-            self.x[i] = self.x[i-1]
-            self.y[i] = self.y[i-1]
+            temp.insert(0, self.position[i - 1])
+        
 
         # Update head position
         if self.direction == 0:
-            self.x[0] = self.x[0] + self.speed
+            #self.x[0] = self.x[0] + self.speed
+            #self.position[0][0] += self.speed
+            temp.insert(0, [self.position[0][0] + self.speed, self.position[0][1]])
         elif self.direction == 1:
-            self.x[0] = self.x[0] - self.speed
+            #self.x[0] = self.x[0] - self.speed
+            #self.position[0][0] -= self.speed
+            temp.insert(0, [self.position[0][0] - self.speed, self.position[0][1]])
         elif self.direction == 2:
-            self.y[0] = self.y[0] - self.speed
+            #self.y[0] = self.y[0] - self.speed
+            #self.position[0][1] -= self.speed
+            temp.insert(0, [self.position[0][0], self.position[0][1] - self.speed])
         elif self.direction == 3:
-            self.y[0] = self.y[0] + self.speed
-
+            #self.y[0] = self.y[0] + self.speed
+            #self.position[0][1] += self.speed
+            temp.insert(0, [self.position[0][0], self.position[0][1] + self.speed])
+        
+        self.position = temp
+        
     def move_right(self):
         self.direction = 0
 
@@ -62,31 +72,43 @@ class Snake:
 
     def move_down(self):
         self.direction = 3
-    
+      
     def collision(self):
         # May change how this works later, checks if snake goes
         # out of bound
-        if self.x[0] < 0 or self.x[0] > WIDTH - BLOCK_W:
+        x = self.position[0][0]
+        y = self.position[0][1]
+        if x < 0 or x > WIDTH - BLOCK_W:
             self.alive = False
-        if self.y[0] < 0 or self.y[0] > HEIGHT - BLOCK_H:
+        if y < 0 or y > HEIGHT - BLOCK_H:
             self.alive = False
 
-        for i in range(1, self.length):
-            if self.x[0] == self.x[i]:
-                if self.y[0] == self.y[i]:
-                    self.alive = False
+        # Checks if snake hit itself
+        if self.position.count(self.position[0]) > 1:
+            self.alive = False
+        #for i in range(1, self.length):
+        #    if x == self.position[i][0]:
+        #        if y == self.position[i][1]:
+        #            self.alive = False
 
     def eat(self, fruit):
-        if (self.x[0] == fruit.pos[0] and self.y[0] == fruit.pos[1]):
-            print("Hit!")
-            self.x.append(fruit.pos[0])
-            self.y.append(fruit.pos[1])
+        x = self.position[0][0]
+        y = self.position[0][1]
+        if (x == fruit.pos[0] and y == fruit.pos[1]):
+            self.position.append([fruit.pos[0], fruit.pos[1]])
             self.length = self.length + 1
-            fruit.random_generate()
+            
+            while True:
+                fruit.random_generate()
+                print("Fruit:", fruit.pos)
+                print("Snake:", self.position)
+                print(self.position.count(fruit.pos))
+                if self.position.count(fruit.pos) == 0:
+                    break
 
     def draw(self, surface):
         for i in range(0, self.length):
-            block = pygame.Rect((self.x[i], self.y[i]), (BLOCK_W, BLOCK_H))
+            block = pygame.Rect((self.position[i][0], self.position[i][1]), (BLOCK_W, BLOCK_H))
             pygame.draw.rect(surface, self.color, block)
 
 
@@ -172,14 +194,14 @@ class App:
             elif key[K_DOWN]:
                 if self.snake.direction != 2:
                     self.snake.move_down()
-            
-            self.snake.update()
+                    
             for event in pygame.event.get():
                 self.on_event(event)
 
             self.on_loop()
             self.on_render()
-            self.clock.tick(10)
+            self.snake.update()
+            self.clock.tick(11)
             if self.snake.alive == False:
                 break
 
