@@ -33,6 +33,17 @@ class Snake:
         for i in range(0, self.length - 1):
             self.position.append([self.position[i][0] - BLOCK_W, HEIGHT/2])
 
+    def reset(self):
+        self.position = []
+        self.position.append([WIDTH/2, HEIGHT/2])
+        self.length = 3
+        self.direction = 0
+        self.score = 0
+        self.alive = True
+
+        for i in range(0, self.length - 1):
+            self.position.append([self.position[i][0] - BLOCK_W, HEIGHT/2])
+
     def update(self):
 
         # Update Snake body
@@ -82,6 +93,8 @@ class Snake:
         # Checks if head is going to eat fruit
         x = self.position[0][0]
         y = self.position[0][1]
+        
+        # Figures out where head would be next movemnet
         if (self.direction == 0):
             x += self.speed
         elif (self.direction == 1):
@@ -139,6 +152,7 @@ class App:
         self.clock = None
         self.snake = Snake()
         self.fruit = Fruit()
+        self.pause = False
  
     def on_init(self):
         pygame.init()
@@ -147,8 +161,28 @@ class App:
         self.clock = pygame.time.Clock()
  
     def on_event(self, event):
+
+        # Quit game
         if event.type == pygame.QUIT:
             self._running = False
+        
+        # Change direction of snake
+        if event.type == pygame.KEYDOWN:
+            if event.key == K_RIGHT:
+                if self.snake.direction != 1:
+                    self.snake.move_right()
+            elif event.key == K_LEFT:
+                if self.snake.direction != 0:
+                    self.snake.move_left()
+            elif event.key == K_UP:
+                if self.snake.direction != 3:
+                    self.snake.move_up()
+            elif event.key == K_DOWN:
+                if self.snake.direction != 2:
+                    self.snake.move_down()
+            elif event.key == K_p:
+                self.pause = not self.pause
+
     
     def on_loop(self):
         self.snake.collision()
@@ -180,33 +214,21 @@ class App:
             self._running = False
  
         while (self._running):
-            
-            pygame.event.pump()
-            key = pygame.key.get_pressed()
-
-            if key[K_RIGHT]:
-                if self.snake.direction != 1:
-                    self.snake.move_right()
-            elif key[K_LEFT]:
-                if self.snake.direction != 0:
-                    self.snake.move_left()
-            elif key[K_UP]:
-                if self.snake.direction != 3:
-                    self.snake.move_up()
-            elif key[K_DOWN]:
-                if self.snake.direction != 2:
-                    self.snake.move_down()
-                    
+        
             for event in pygame.event.get():
                 self.on_event(event)
 
-            self.on_loop()
-            self.on_render()
-            self.clock.tick(11)
+            # Checks if game is paused
+            if self.pause is False:
+                self.on_loop()
+                self.on_render()
+                self.clock.tick(11)
 
-            # Quite when snake dies
+            # Reset when snake dies
             if self.snake.alive == False:
-                break
+                print(int(self.snake.score))
+                self.snake.reset()
+                self.fruit.random_generate()
 
         # Clean up and print score
         self.on_cleanup()
