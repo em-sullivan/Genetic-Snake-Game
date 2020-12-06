@@ -76,18 +76,84 @@ class Snake:
     def move_down(self):
         self.direction = 3
       
-    def collision(self):
+    def collision(self, head):
         # Checks if snake hit boarder
+        '''
         if self.position[0][0] < 0 or self.position[0][0] > WIDTH - BLOCK_W:
-            self.alive = False
+            return False
         if self.position[0][1] < 0 or self.position[0][1] > HEIGHT - BLOCK_H:
-            self.alive = False
+            return False
 
         # Checks if snake hit itself
         if self.position.count(self.position[0]) > 1:
-            self.alive = False
-       
+            return False
+        '''
+        if head[0] < 0 or head[0] > WIDTH - BLOCK_W:
+            return False
+        if head[1] < 0 or head[1] > WIDTH - BLOCK_H:
+            return False
 
+        if self.position.count(head) > 1:
+            return False
+
+        # Return true is snake is didn't collide
+        return True
+       
+    def check_head(self):
+        '''
+        Returns a numpy array if head will
+        collide and die
+        '''
+
+        hit = np.array([0, 0, 0, 0])
+        head_x = self.position[0][0]
+        head_y = self.position[0][1]
+
+        '''
+        if self.direction == 0:
+            hit[0] = self.collision([head_x + self.speed, head_y])
+            hit[1] = self.collision([head_x, head_y - self.speed])
+            hit[2] = self.collision([head_x, head_y + self.speed])
+
+        if self.direction == 1:
+            hit[0] = self.collision([head_x - self.speed, head_y])
+            hit[1] = self.collision([head_x, head_y - self.speed])
+            hit[2] = self.collision([head_x, head_y + self.speed])
+
+        if self.direction == 2:
+            hit[0] = self.collision([head_x, head_y - self.speed])
+            hit[1] = self.collision([head_x + self.speed, head_y])
+            hit[2] = self.collision([head_x - self.speed, head_y])
+
+        if self.direction == 3:
+            hit[0] = self.collision([head_x, head_y + self.speed])
+            hit[1] = self.collision([head_x + self.speed, head_y])
+            hit[2] = self.collision([head_x - self.speed, head_y])
+        '''
+        hit[0] = self.collision([head_x + self.speed,head_y])
+        hit[1] = self.collision([head_x - self.speed, head_y])
+        hit[2] = self.collision([head_x, head_y - self.speed])
+        hit[3] = self.collision([head_x, head_y + self.speed])
+
+        return 1 - hit
+
+
+    def check_fruit(self, fruit):
+        hit = np.array([0, 0, 0, 0])
+        head_x = self.position[0][0]
+        head_y = self.position[0][1]
+
+        if ([head_x + self.speed, head_y] == fruit.pos):
+            hit[0] = 1
+        if ([head_x - self.speed, head_y] == fruit.pos):
+            hit[1] = 1
+        if ([head_x, head_y - self.speed] == fruit.pos):
+            hit[2] = 1
+        if ([head_x, head_y + self.speed] == fruit.pos):
+            hit[3] = 1
+        
+        return hit
+    
     def eat(self, fruit):
         
         # Checks if head is going to eat fruit
@@ -139,6 +205,9 @@ class Fruit:
     def draw(self, surface):
         apple = pygame.Rect((self.pos[0], self.pos[1]), (BLOCK_W, BLOCK_H))
         pygame.draw.rect(surface, self.color, apple)
+    
+    def position(self):
+        return self.pos
 
 
 class App:
@@ -185,11 +254,13 @@ class App:
 
     
     def on_loop(self):
-        self.snake.collision()
+        self.snake.alive = self.snake.collision(self.snake.position[0])
         if self.snake.alive is False:
             return
         self.snake.eat(self.fruit)
         self.snake.update()
+        #print(self.snake.check_head())
+        #print(self.snake.check_fruit(self.fruit))
     
     def on_render(self):
         self._display_surf.fill((0,124,0))

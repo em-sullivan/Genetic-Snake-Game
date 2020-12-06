@@ -6,6 +6,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, Activation
 
 from snake_game import Snake
+from snake_game import Fruit
 
 total_models = 25
 current_pool = []
@@ -21,18 +22,19 @@ def save_pool():
 def create_model():
     # create keras model
     model = Sequential()
-    model.add(Dense(9, input_dim = 6, activation = 'relu'))
+    model.add(Dense(12, input_dim = 8, activation = 'relu'))
     model.add(Dense(15, activation = 'relu'))
-    model.add(Dense(3, activation = 'sigmoid'))
+    model.add(Dense(4, activation = 'sigmoid'))
     model.compile(loss='mse',optimizer='adam')
 
     return model
 
-def predict_direction(game):
+def predict_direction(game, snake, fruit):
     '''
     This function feeds information into the model, then determines
     which direction the snake should go
     '''
+
     print("WORK ONE ME")
 
 def model_crossover(parent_1, parent_2):
