@@ -29,13 +29,22 @@ def create_model():
 
     return model
 
-def predict_direction(game, snake, fruit):
+def predict_direction(snake, fruit, model_num):
     '''
     This function feeds information into the model, then determines
     which direction the snake should go
     '''
+    direction = snake.check_head()
+    fruit = snake.check_fruit(fruit)
 
-    print("WORK ONE ME")
+    n_input = np.concatenate([direction, fruit])
+    n_input = np.atleast_2d(n_input)
+
+    output = current_pool[model_num].predict(n_input, 1)
+
+    for i in range(4):
+        if output[i] > 0.5:
+            return i
 
 def model_crossover(parent_1, parent_2):
     '''
