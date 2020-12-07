@@ -7,10 +7,21 @@ from tensorflow.keras.layers import Dense, Flatten, Conv2D, Activation
 
 from snake_game import Snake
 from snake_game import Fruit
+import pygame
+from pygame.locals import *
 
+# Neural Network globals
 total_models = 25
 current_pool = []
 fitness = []
+generation = 1
+
+# Game configurations
+WIDTH = 480
+HEIGHT = 480
+GRID_D = 12
+BLOCK_W = WIDTH / GRID_D
+BLOCK_H = HEIGHT / GRID_D
 
 # Save models to file
 def save_pool():
@@ -25,7 +36,7 @@ def create_model():
     model.add(Dense(12, input_dim = 8, activation = 'relu'))
     model.add(Dense(15, activation = 'relu'))
     model.add(Dense(4, activation = 'sigmoid'))
-    model.compile(loss='mse',optimizer='adam')
+    model.compile(loss='mse', optimizer='adam')
 
     return model
 
@@ -42,9 +53,7 @@ def predict_direction(snake, fruit, model_num):
 
     output = current_pool[model_num].predict(n_input, 1)
 
-    for i in range(4):
-        if output[i] > 0.5:
-            return i
+    return output.argmax()
 
 def model_crossover(parent_1, parent_2):
     '''
@@ -80,10 +89,165 @@ def model_mutate(weights):
     
     return weights
 
+def genetic_updates():
+    print("I am a work in progress")
+
+    global current_pool
+    global fitness
+    global generation
+    new_weights = []
+    total_fitness = 0
+
+    # Calculate fitness
+    for i in range(total_models):
+        total_fitness += fitness[i]
+    
+    # Scaling fitness values
+    for i in range(total_models):
+        fitness[i] /= total_fitness
+        if i > 0:
+            fitness[i] += fitness[i - 1]
+
+    # Breeding time
+    for i in range(total_models // 2):
+        parent_1 = random.uniform(0, 1)
+        parent_2 = random.uniform(0, 1)
+        index_1 = -1
+        index_2 = -1
+
+        for i in range(total_models):
+            if fitness[index_1] >= parent_1:
+                index_1 = i
+                break
+        for i in range(total_models):
+            if fitness[index_2] >= parent_2:
+                inex_2 = i
+                break
+
+        new = model_crossover(index_1, index_2)
+        update_w1 = model_mutate(new[0])
+        update_w2 = model_mutate(new[1])
+        new_weights.append(update_w1)
+        new_weights.append(update_w2)
+
+    # Reset fitness
+    for i in range(len(new_weights)):
+        fitness[i] = -100
+        current_pool[i].set_weights(new_weights[i])
+
+    # Save models (ADD ME LATER)
+    generation += 1
+    return
+
 
 print("I am a work in progress")
-# Init models
-for i in range(total_models):
-    model = create_model()
-    current_pool.append(model)
-    fitness.append(-100)
+
+class App:
+    '''
+    Main App for game
+    '''
+    def __init__(self):
+        self._running = True
+        self._display_surf = None
+        self.size = self.width, self.height = WIDTH, HEIGHT
+        self.clock = None
+        self.snake = Snake()
+        self.fruit = Fruit()
+        self.pause = False
+ 
+    def on_init(self):
+        pygame.init()
+        self._display_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
+        self._running = True
+        self.clock = pygame.time.Clock()
+ 
+    def on_event(self, event):
+
+        # Quit game
+        if event.type == pygame.QUIT:
+            self._running = False
+        
+        # Change direction of snake
+        if event.type == pygame.KEYDOWN:
+            if event.key == K_RIGHT:
+                if self.snake.direction != 1:
+                    self.snake.move_right()
+            elif event.key == K_LEFT:
+                if self.snake.direction != 0:
+                    self.snake.move_left()
+            elif event.key == K_UP:
+                if self.snake.direction != 3:
+                    self.snake.move_up()
+            elif event.key == K_DOWN:
+                if self.snake.direction != 2:
+                    self.snake.move_down()
+            elif event.key == K_p:
+                self.pause = not self.pause
+
+    
+    def on_loop(self):
+        self.snake.alive = self.snake.collision(self.snake.position[0])
+        if self.snake.alive is False:
+            return
+        self.snake.eat(self.fruit)
+        self.snake.update()
+        #print(self.snake.check_head())
+        #print(self.snake.check_fruit(self.fruit))
+    
+    def on_render(self):
+        self._display_surf.fill((0,124,0))
+        
+        # Fill every other space to create a multi color grid
+        for i in range(0, int(GRID_D)):
+            for j in range(0, int(GRID_D)):
+                if (i + j) % 2 == 0:
+                    block = pygame.Rect(((j * BLOCK_W, i * BLOCK_H), (BLOCK_W, BLOCK_H)))
+                    pygame.draw.rect(self._display_surf, (0, 200, 0), block)
+
+        # Draw sanke and fruit
+        self.fruit.draw(self._display_surf)
+        self.snake.draw(self._display_surf)
+        pygame.display.update()
+    
+    def on_cleanup(self):
+        pygame.quit()
+ 
+    def on_execute(self, i):
+        if self.on_init() == False:
+            self._running = False
+ 
+        while (self._running):
+            for event in pygame.event.get():
+                self.on_event(event)
+            
+            self.snake.direction = predict_direction(self.snake, self.fruit, i)
+
+            # Checks if game is paused
+            if self.pause is False:
+                self.on_loop()
+                self.on_render()
+                self.clock.tick(11)
+
+            # Reset when snake dies
+            if self.snake.alive == False:
+                print(int(self.snake.score))
+                self.snake.reset()
+                self.fruit.random_generate()
+                break
+
+        # Clean up and print score
+        #self.on_cleanup()
+        print(int(self.snake.score))
+ 
+if __name__ == "__main__" :
+    # Init models
+    for i in range(total_models):
+        model = create_model()
+        current_pool.append(model)
+        fitness.append(-100)
+
+theApp = App()
+while True:
+    for i in range(total_models):    
+        theApp.on_execute(i)
+    genetic_updates()
