@@ -11,7 +11,7 @@ import pygame
 from pygame.locals import *
 
 # Neural Network globals
-total_models = 25
+total_models = 50
 current_pool = []
 fitness = []
 generation = 1
@@ -22,6 +22,7 @@ HEIGHT = 480
 GRID_D = 12
 BLOCK_W = WIDTH / GRID_D
 BLOCK_H = HEIGHT / GRID_D
+MAX_MOVES = 100
 
 # Save models to file
 def save_pool():
@@ -60,7 +61,6 @@ def model_crossover(parent_1, parent_2):
     Produce offspring based on the best parrents
     May change how this works later
     '''
-    print("Work on ME")
     global current_pool
 
     # Weight of parents
@@ -80,7 +80,6 @@ def model_mutate(weights):
     '''
     Mutate the weights of a model
     '''
-    print("Work on ME")
     for i in range(len(weights)):
         for j in range(len(weights[i])):
             if (random.uniform(0, 1) > .5):
@@ -121,7 +120,7 @@ def genetic_updates():
                 break
         for i in range(total_models):
             if fitness[index_2] >= parent_2:
-                inex_2 = i
+                index_2 = i
                 break
 
         new = model_crossover(index_1, index_2)
@@ -154,6 +153,7 @@ class App:
         self.snake = Snake()
         self.fruit = Fruit()
         self.pause = False
+        self.moves = 0
  
     def on_init(self):
         pygame.init()
@@ -191,10 +191,11 @@ class App:
             return
         self.snake.eat(self.fruit)
         self.snake.update()
+        self.moves += 1
         #print(self.snake.check_head())
         #print(self.snake.check_fruit(self.fruit))
     
-    def on_render(self):
+    def on_render(self, model_num):
         self._display_surf.fill((0,124,0))
         
         # Fill every other space to create a multi color grid
@@ -207,6 +208,7 @@ class App:
         # Draw sanke and fruit
         self.fruit.draw(self._display_surf)
         self.snake.draw(self._display_surf)
+        pygame.display.set_caption("Gen: " + str(generation) + " Model: " + str(model_num) + " Score: " + str(self.snake.score))
         pygame.display.update()
     
     def on_cleanup(self):
@@ -225,14 +227,18 @@ class App:
             # Checks if game is paused
             if self.pause is False:
                 self.on_loop()
-                self.on_render()
+                self.on_render(i)
                 self.clock.tick(11)
 
             # Reset when snake dies
-            if self.snake.alive == False:
+            if self.snake.alive == False or self.moves == MAX_MOVES:
                 print(int(self.snake.score))
                 self.snake.reset()
                 self.fruit.random_generate()
+                self.moves = 0
+                # Adjust fitness
+                fitness[i] -= 20
+                fitness[i] += self.snake.score * 10
                 break
 
         # Clean up and print score
@@ -248,6 +254,9 @@ if __name__ == "__main__" :
 
 theApp = App()
 while True:
+    for i in range(total_models):
+        fitness[i] = 0
+
     for i in range(total_models):    
         theApp.on_execute(i)
     genetic_updates()
