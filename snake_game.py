@@ -140,6 +140,7 @@ class Snake:
 
     def check_fruit(self, fruit):
         hit = np.array([0, 0, 0, 0])
+        '''
         head_x = self.position[0][0]
         head_y = self.position[0][1]
 
@@ -151,6 +152,20 @@ class Snake:
             hit[2] = 1
         if ([head_x, head_y + self.speed] == fruit.pos):
             hit[3] = 1
+        '''
+        x_dis = fruit.pos[0] - self.position[0][0]
+        y_dis = fruit.pos[1] - self.position[0][1]
+
+        if x_dis > 0:
+            hit[0] = 1
+        elif x_dis < 0:
+            hit[1] = 1
+        if y_dis > 0:
+            hit[3] = 1
+        elif y_dis < 0:
+            hit[2] = 1
+
+        return hit  
         
         return hit
     
@@ -265,7 +280,7 @@ class App:
         self.snake.eat(self.fruit)
         self.snake.update()
         #print(self.snake.check_head())
-        #print(self.snake.check_fruit(self.fruit))
+        print(self.snake.check_fruit(self.fruit))
     
     def on_render(self):
         self._display_surf.fill((0,124,0))

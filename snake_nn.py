@@ -12,10 +12,11 @@ import pygame
 from pygame.locals import *
 
 # Neural Network globals
-total_models = 100
+total_models = 50
 current_pool = []
 fitness = []
 generation = 1
+top_fits = total_models // 10
 
 # Game configurations
 WIDTH = 480
