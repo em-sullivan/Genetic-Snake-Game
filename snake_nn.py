@@ -1,5 +1,6 @@
 import random
 import sys
+import math
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
@@ -11,7 +12,7 @@ import pygame
 from pygame.locals import *
 
 # Neural Network globals
-total_models = 50
+total_models = 100
 current_pool = []
 fitness = []
 generation = 1
@@ -138,6 +139,16 @@ def genetic_updates():
     generation += 1
     return
 
+def check_if_closer(snake, fruit):
+    head = snake.position[0]
+    prev = snake.position[1]
+
+    head_dis = math.sqrt((fruit.pos[0] - head[0]) ** 2 + (fruit.pos[1] - head[1]) ** 2)
+    prev_dis = math.sqrt((fruit.pos[0] - prev[0]) ** 2 + (fruit.pos[1] - prev[1]) ** 2)
+
+    if head_dis > prev_dis:
+        return False
+    return True
 
 print("I am a work in progress")
 
@@ -154,6 +165,7 @@ class App:
         self.fruit = Fruit()
         self.pause = False
         self.moves = 0
+        self.frames = 11
  
     def on_init(self):
         pygame.init()
@@ -169,31 +181,33 @@ class App:
         
         # Change direction of snake
         if event.type == pygame.KEYDOWN:
-            if event.key == K_RIGHT:
-                if self.snake.direction != 1:
-                    self.snake.move_right()
-            elif event.key == K_LEFT:
-                if self.snake.direction != 0:
-                    self.snake.move_left()
-            elif event.key == K_UP:
-                if self.snake.direction != 3:
-                    self.snake.move_up()
+            if event.key == K_UP:
+                if self.frames < 1000000000:
+                    self.frames *= 10
             elif event.key == K_DOWN:
-                if self.snake.direction != 2:
-                    self.snake.move_down()
+                if self.frames > 10:
+                    self.frames /= 10
             elif event.key == K_p:
                 self.pause = not self.pause
+            elif event.key == K_q:
+                self.on_cleanup()
+                sys.exit()
 
     
-    def on_loop(self):
+    def on_loop(self, model_num):
         self.snake.alive = self.snake.collision(self.snake.position[0])
         if self.snake.alive is False:
             return
-        self.snake.eat(self.fruit)
+        if self.snake.eat(self.fruit) is True:
+            fitness[model_num] += 100
         self.snake.update()
+        
+        if check_if_closer(self.snake, self.fruit):
+            fitness[model_num] += 1
+        else:
+            fitness[model_num] -= 2
+
         self.moves += 1
-        #print(self.snake.check_head())
-        #print(self.snake.check_fruit(self.fruit))
     
     def on_render(self, model_num):
         self._display_surf.fill((0,124,0))
@@ -208,7 +222,7 @@ class App:
         # Draw sanke and fruit
         self.fruit.draw(self._display_surf)
         self.snake.draw(self._display_surf)
-        pygame.display.set_caption("Gen: " + str(generation) + " Model: " + str(model_num) + " Score: " + str(self.snake.score))
+        pygame.display.set_caption("Gen: " + str(generation) + " Model: " + str(model_num) + " Score: " + str(self.snake.score) + " Tick " + str(self.frames))
         pygame.display.update()
     
     def on_cleanup(self):
@@ -226,9 +240,9 @@ class App:
 
             # Checks if game is paused
             if self.pause is False:
-                self.on_loop()
+                self.on_loop(i)
                 self.on_render(i)
-                self.clock.tick(11)
+                self.clock.tick(self.frames)
 
             # Reset when snake dies
             if self.snake.alive == False or self.moves == MAX_MOVES:
@@ -237,8 +251,8 @@ class App:
                 self.fruit.random_generate()
                 self.moves = 0
                 # Adjust fitness
-                fitness[i] -= 20
-                fitness[i] += self.snake.score * 10
+                fitness[i] -= 10
+                print(fitness[i])
                 break
 
         # Clean up and print score
@@ -255,7 +269,7 @@ if __name__ == "__main__" :
 theApp = App()
 while True:
     for i in range(total_models):
-        fitness[i] = 0
+        fitness[i] = 204
 
     for i in range(total_models):    
         theApp.on_execute(i)

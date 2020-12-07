@@ -183,6 +183,11 @@ class Snake:
                 if fruit.pos not in self.position:
                     break
 
+            return True
+
+        else:
+            return False
+
     def draw(self, surface):
         for i in range(0, self.length):
             block = pygame.Rect((self.position[i][0], self.position[i][1]), (BLOCK_W, BLOCK_H))
