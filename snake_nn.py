@@ -291,14 +291,25 @@ if __name__ == "__main__" :
 
 theApp = App()
 while True:
+
+    # Reset fitness scores and player scores
     for i in range(total_models):
         fitness[i] = 0
         score[i] = 0
 
+    # Play game for each model
     for i in range(total_models):    
         theApp.on_execute(i)
     
+    # Print high score to screen
     print("Higest score: " + str(max(score)) + " Model: " + str(score.index(max(score))) + " Gen: " + str(generation))
+    
+    # Write these values to a file
+    fi = open("results.txt", "a+")
+    fi.write("Higest score: " + str(max(score)) + " Model: " + str(score.index(max(score))) + " Gen: " + str(generation))
+    fi.close()
+
+    # Save pool
     if save == 1:
         save_pool()
     genetic_updates()
