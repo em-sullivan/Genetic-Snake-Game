@@ -125,15 +125,20 @@ def genetic_updates():
             if i != parent_1:
                 index_2 = i
 
-    top_models = np.argpartition(np.asarray(fitness), -5)[-5:]
+    top_models = np.argpartition(np.asarray(fitness), -int(top_fits))[-int(top_fits):]
     print(top_models)
     for i in range(5):
         print(fitness[top_models[i]])
     
     # Breeding time
     for i in range(total_models // 2):
+
+        # Randomly choose from top ten percent
         id1 = top_models[random.randint(0, 4)]
         id2 = top_models[random.randint(0, 4)]
+        if id2 == id1:
+            id2 = top_models[random.randint(0, 4)]
+        
         # new = model_crossover(index_1, index_2)
         new = model_crossover(id1, id2)
         update_w1 = model_mutate(new[0])
@@ -202,8 +207,6 @@ class App:
                 self.pause = not self.pause
             elif event.key == K_q:
                 self.on_cleanup()
-                save_pool()
-                sys.exit()
 
     
     def on_loop(self, model_num):
@@ -239,6 +242,8 @@ class App:
     
     def on_cleanup(self):
         pygame.quit()
+        save_pool()
+        sys.exit()
  
     def on_execute(self, i):
         if self.on_init() == False:
