@@ -17,6 +17,7 @@ current_pool = []
 fitness = []
 generation = 1
 top_fits = total_models // 10
+save = 0
 
 # Game configurations
 WIDTH = 480
@@ -25,11 +26,14 @@ GRID_D = 12
 BLOCK_W = WIDTH / GRID_D
 BLOCK_H = HEIGHT / GRID_D
 MAX_MOVES = 100
+score = []
 
 # Save models to file
 def save_pool():
     for i in range(total_models):
-        current_pool[i].save_weights("Saved_Models/model" + str(i) + "_gen_" + str(generation) + ".keras")
+        # If I want to save the gen number
+        # current_pool[i].save_weights("Saved_Models/model" + str(i) + "_gen_" + str(generation) + ".keras")
+        current_pool[i].save_weights("Saved_Models/model" + str(i) + ".keras")
     print("Pool saved")
 
 
@@ -37,7 +41,7 @@ def create_model():
     # create keras model
     model = Sequential()
     model.add(Dense(12, input_dim = 8, activation = 'relu'))
-    model.add(Dense(15, activation = 'relu'))
+    model.add(Dense(16, activation = 'relu'))
     model.add(Dense(4, activation = 'sigmoid'))
     model.compile(loss='mse', optimizer='adam')
 
@@ -85,7 +89,7 @@ def model_mutate(weights):
     for i in range(len(weights)):
         for j in range(len(weights[i])):
             if (random.uniform(0, 1) > .5):
-                change = random.randint(-1,1)
+                change = random.uniform(-.5,.5)
                 weights[i][j] += change
     
     return weights
@@ -125,6 +129,7 @@ def genetic_updates():
             if i != parent_1:
                 index_2 = i
 
+    # Get top 10% of models for model crossover
     top_models = np.argpartition(np.asarray(fitness), -int(top_fits))[-int(top_fits):]
     print(top_models)
     for i in range(5):
@@ -134,10 +139,10 @@ def genetic_updates():
     for i in range(total_models // 2):
 
         # Randomly choose from top ten percent
-        id1 = top_models[random.randint(0, 4)]
-        id2 = top_models[random.randint(0, 4)]
+        id1 = top_models[random.randint(0, top_fits - 1)]
+        id2 = top_models[random.randint(0, top_fits - 1)]
         if id2 == id1:
-            id2 = top_models[random.randint(0, 4)]
+            id2 = top_models[random.randint(0, top_fits - 1)]
         
         # new = model_crossover(index_1, index_2)
         new = model_crossover(id1, id2)
@@ -215,6 +220,7 @@ class App:
             return
         if self.snake.eat(self.fruit) is True:
             fitness[model_num] += 150
+            score[model_num] += 1
         self.snake.update()
         
         if check_if_closer(self.snake, self.fruit):
@@ -242,7 +248,6 @@ class App:
     
     def on_cleanup(self):
         pygame.quit()
-        save_pool()
         sys.exit()
  
     def on_execute(self, i):
@@ -267,14 +272,14 @@ class App:
                 self.snake.reset()
                 self.fruit.random_generate()
                 self.moves = 0
-                # Adjust fitness
-                # fitness[i] -= 10
+               
+                # Print fitness
                 print(fitness[i])
                 break
 
         # Clean up and print score
         # self.on_cleanup()
-        # print(int(self.snake.score))
+        print(int(self.snake.score))
  
 if __name__ == "__main__" :
     # Init models
@@ -282,13 +287,18 @@ if __name__ == "__main__" :
         model = create_model()
         current_pool.append(model)
         fitness.append(-100)
+        score.append(0)
 
 theApp = App()
 while True:
     for i in range(total_models):
         fitness[i] = 0
+        score[i] = 0
 
     for i in range(total_models):    
         theApp.on_execute(i)
-    print(fitness)
+    
+    print("Higest score: " + str(max(score)) + " Model: " + str(score.index(max(score))) + " Gen: " + str(generation))
+    if save == 1:
+        save_pool()
     genetic_updates()
