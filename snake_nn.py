@@ -29,7 +29,7 @@ MAX_MOVES = 100
 # Save models to file
 def save_pool():
     for i in range(total_models):
-        current_pool[i].save_weights("Saved_Models/model" + str(i) + ".keras")
+        current_pool[i].save_weights("Saved_Models/model" + str(i) + "_gen_" + str(generation) + ".keras")
     print("Pool saved")
 
 
@@ -104,28 +104,38 @@ def genetic_updates():
         total_fitness += fitness[i]
     
     # Scaling fitness values
+    '''
     for i in range(total_models):
         fitness[i] /= total_fitness
         if i > 0:
             fitness[i] += fitness[i - 1]
+    '''
 
+    parent_1 = random.randint(0, total_models - 1)
+    parent_2 = random.randint(0, total_models - 1)
+    index_1 = -1
+    index_2 = -1
+
+    for i in range(total_models):
+        if fitness[i] >= fitness[parent_1]:
+            index_1 = i
+
+    for i in range(total_models):
+        if fitness[i] >= fitness[parent_2]:
+            if i != parent_1:
+                index_2 = i
+
+    top_models = np.argpartition(np.asarray(fitness), -5)[-5:]
+    print(top_models)
+    for i in range(5):
+        print(fitness[top_models[i]])
+    
     # Breeding time
     for i in range(total_models // 2):
-        parent_1 = random.uniform(0, 1)
-        parent_2 = random.uniform(0, 1)
-        index_1 = -1
-        index_2 = -1
-
-        for i in range(total_models):
-            if fitness[index_1] >= parent_1:
-                index_1 = i
-                break
-        for i in range(total_models):
-            if fitness[index_2] >= parent_2:
-                index_2 = i
-                break
-
-        new = model_crossover(index_1, index_2)
+        id1 = top_models[random.randint(0, 4)]
+        id2 = top_models[random.randint(0, 4)]
+        # new = model_crossover(index_1, index_2)
+        new = model_crossover(id1, id2)
         update_w1 = model_mutate(new[0])
         update_w2 = model_mutate(new[1])
         new_weights.append(update_w1)
@@ -192,6 +202,7 @@ class App:
                 self.pause = not self.pause
             elif event.key == K_q:
                 self.on_cleanup()
+                save_pool()
                 sys.exit()
 
     
@@ -200,13 +211,13 @@ class App:
         if self.snake.alive is False:
             return
         if self.snake.eat(self.fruit) is True:
-            fitness[model_num] += 100
+            fitness[model_num] += 150
         self.snake.update()
         
         if check_if_closer(self.snake, self.fruit):
-            fitness[model_num] += 1
+            fitness[model_num] += 10
         else:
-            fitness[model_num] -= 2
+            fitness[model_num] -= 0
 
         self.moves += 1
     
@@ -252,13 +263,13 @@ class App:
                 self.fruit.random_generate()
                 self.moves = 0
                 # Adjust fitness
-                fitness[i] -= 10
+                # fitness[i] -= 10
                 print(fitness[i])
                 break
 
         # Clean up and print score
-        #self.on_cleanup()
-        print(int(self.snake.score))
+        # self.on_cleanup()
+        # print(int(self.snake.score))
  
 if __name__ == "__main__" :
     # Init models
@@ -270,8 +281,9 @@ if __name__ == "__main__" :
 theApp = App()
 while True:
     for i in range(total_models):
-        fitness[i] = 204
+        fitness[i] = 0
 
     for i in range(total_models):    
         theApp.on_execute(i)
+    print(fitness)
     genetic_updates()
