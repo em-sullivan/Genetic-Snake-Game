@@ -22,7 +22,7 @@ class Snake:
         self.position = []
         self.position.append([WIDTH/2, HEIGHT/2])
 
-        self.speed = BLOCK_W
+        self.speed = float(BLOCK_W)
         self.length = 3
         self.direction = 0
         self.color = (0, 255, 255)
@@ -76,7 +76,7 @@ class Snake:
     def move_down(self):
         self.direction = 3
       
-    def collision(self, head):
+    def collision(self, head, adjustment = False):
         # Checks if snake hit boarder
         '''
         if self.position[0][0] < 0 or self.position[0][0] > WIDTH - BLOCK_W:
@@ -93,8 +93,12 @@ class Snake:
         if head[1] < 0 or head[1] > WIDTH - BLOCK_H:
             return False
 
-        if self.position.count(head) > 1:
-            return False
+        if adjustment == True:
+            if self.position.count(head) > 0:
+                return False
+        else:
+            if self.position.count(head) > 1:
+                return False
 
         # Return true is snake is didn't collide
         return True
@@ -108,32 +112,11 @@ class Snake:
         hit = np.array([0, 0, 0, 0])
         head_x = self.position[0][0]
         head_y = self.position[0][1]
-
-        '''
-        if self.direction == 0:
-            hit[0] = self.collision([head_x + self.speed, head_y])
-            hit[1] = self.collision([head_x, head_y - self.speed])
-            hit[2] = self.collision([head_x, head_y + self.speed])
-
-        if self.direction == 1:
-            hit[0] = self.collision([head_x - self.speed, head_y])
-            hit[1] = self.collision([head_x, head_y - self.speed])
-            hit[2] = self.collision([head_x, head_y + self.speed])
-
-        if self.direction == 2:
-            hit[0] = self.collision([head_x, head_y - self.speed])
-            hit[1] = self.collision([head_x + self.speed, head_y])
-            hit[2] = self.collision([head_x - self.speed, head_y])
-
-        if self.direction == 3:
-            hit[0] = self.collision([head_x, head_y + self.speed])
-            hit[1] = self.collision([head_x + self.speed, head_y])
-            hit[2] = self.collision([head_x - self.speed, head_y])
-        '''
-        hit[0] = self.collision([head_x + self.speed,head_y])
-        hit[1] = self.collision([head_x - self.speed, head_y])
-        hit[2] = self.collision([head_x, head_y - self.speed])
-        hit[3] = self.collision([head_x, head_y + self.speed])
+        
+        hit[0] = self.collision([head_x + self.speed, head_y], True)
+        hit[1] = self.collision([head_x - self.speed, head_y], True)
+        hit[2] = self.collision([head_x, head_y - self.speed], True)
+        hit[3] = self.collision([head_x, head_y + self.speed], True)
 
         return 1 - hit
 
@@ -279,8 +262,8 @@ class App:
             return
         self.snake.eat(self.fruit)
         self.snake.update()
-        #print(self.snake.check_head())
-        print(self.snake.check_fruit(self.fruit))
+        print(self.snake.check_head())
+        #print(self.snake.check_fruit(self.fruit))
     
     def on_render(self):
         self._display_surf.fill((0,124,0))

@@ -16,8 +16,13 @@ total_models = 50
 current_pool = []
 fitness = []
 generation = 1
-top_fits = total_models // 10
+top_fits = total_models // 5
+
+# 1 if want to save pool, 0 if not
 save = 0
+save_location = "Saved_Models/model"
+load = 0
+load_location = "Saved_Models-ok/model"
 
 # Game configurations
 WIDTH = 480
@@ -31,14 +36,14 @@ score = []
 # Save models to file
 def save_pool():
     for i in range(total_models):
-        # If I want to save the gen number
-        # current_pool[i].save_weights("Saved_Models/model" + str(i) + "_gen_" + str(generation) + ".keras")
-        current_pool[i].save_weights("Saved_Models/model" + str(i) + ".keras")
+        current_pool[i].save_weights(save_location + str(i) + ".keras")
     print("Pool saved")
 
 
 def create_model():
-    # create keras model
+    '''
+    Create Neural Network as a keras model
+    '''
     model = Sequential()
     model.add(Dense(12, input_dim = 8, activation = 'relu'))
     model.add(Dense(16, activation = 'relu'))
@@ -59,13 +64,12 @@ def predict_direction(snake, fruit, model_num):
     n_input = np.atleast_2d(n_input)
 
     output = current_pool[model_num].predict(n_input, 1)
-
+ 
     return output.argmax()
 
 def model_crossover(parent_1, parent_2):
     '''
-    Produce offspring based on the best parrents
-    May change how this works later
+    Produce offspring based on the best parents
     '''
     global current_pool
 
@@ -88,7 +92,7 @@ def model_mutate(weights):
     '''
     for i in range(len(weights)):
         for j in range(len(weights[i])):
-            if (random.uniform(0, 1) > .5):
+            if (random.uniform(0, 1) > .7):
                 change = random.uniform(-.5,.5)
                 weights[i][j] += change
     
@@ -101,62 +105,47 @@ def genetic_updates():
     global fitness
     global generation
     new_weights = []
-    total_fitness = 0
 
-    # Calculate fitness
-    for i in range(total_models):
-        total_fitness += fitness[i]
+    # Calculate total fitness
+    total_fitness = sum(fitness)
     
-    # Scaling fitness values
-    '''
-    for i in range(total_models):
-        fitness[i] /= total_fitness
-        if i > 0:
-            fitness[i] += fitness[i - 1]
-    '''
-
-    parent_1 = random.randint(0, total_models - 1)
-    parent_2 = random.randint(0, total_models - 1)
-    index_1 = -1
-    index_2 = -1
-
-    for i in range(total_models):
-        if fitness[i] >= fitness[parent_1]:
-            index_1 = i
-
-    for i in range(total_models):
-        if fitness[i] >= fitness[parent_2]:
-            if i != parent_1:
-                index_2 = i
-
-    # Get top 10% of models for model crossover
-    top_models = np.argpartition(np.asarray(fitness), -int(top_fits))[-int(top_fits):]
-    print(top_models)
-    for i in range(5):
-        print(fitness[top_models[i]])
-    
-    # Breeding time
+    # Crossover_time
     for i in range(total_models // 2):
+        choice_1 = random.randint(0, total_fitness)
+        choice_2 = random.randint(0, total_fitness)
+        parent_1 = -1
+        parent_2 = -1
 
-        # Randomly choose from top ten percent
-        id1 = top_models[random.randint(0, top_fits - 1)]
-        id2 = top_models[random.randint(0, top_fits - 1)]
-        if id2 == id1:
-            id2 = top_models[random.randint(0, top_fits - 1)]
+        # Pick 1st parent
+        current = 0
+        for idx in range(total_models):
+            current += fitness[idx]
+            if current >= choice_1:
+                parent_1 = idx
+                break
         
-        # new = model_crossover(index_1, index_2)
-        new = model_crossover(id1, id2)
+        # Pick 2nd parent
+        current = 0
+        for idx in range(total_models):
+            current += fitness[idx]
+            if current >= choice_2:
+                parent_2 = idx
+                break
+  
+        # Model crossover between two parents
+        new = model_crossover(parent_1, parent_2)
+        
+        # Mutate models
         update_w1 = model_mutate(new[0])
         update_w2 = model_mutate(new[1])
         new_weights.append(update_w1)
         new_weights.append(update_w2)
 
-    # Reset fitness
+    # Set new weights, reset fitness
     for i in range(len(new_weights)):
         fitness[i] = -100
         current_pool[i].set_weights(new_weights[i])
 
-    # Save models (ADD ME LATER)
     generation += 1
     return
 
@@ -164,6 +153,8 @@ def check_if_closer(snake, fruit):
     head = snake.position[0]
     prev = snake.position[1]
 
+    # Calculate the heads distance from the fruit, and the previous spot
+    # to see if it got closer
     head_dis = math.sqrt((fruit.pos[0] - head[0]) ** 2 + (fruit.pos[1] - head[1]) ** 2)
     prev_dis = math.sqrt((fruit.pos[0] - prev[0]) ** 2 + (fruit.pos[1] - prev[1]) ** 2)
 
@@ -171,7 +162,6 @@ def check_if_closer(snake, fruit):
         return False
     return True
 
-print("I am a work in progress")
 
 class App:
     '''
@@ -221,6 +211,7 @@ class App:
         if self.snake.eat(self.fruit) is True:
             fitness[model_num] += 150
             score[model_num] += 1
+            self.moves = 0
         self.snake.update()
         
         if check_if_closer(self.snake, self.fruit):
@@ -289,6 +280,10 @@ if __name__ == "__main__" :
         fitness.append(-100)
         score.append(0)
 
+    if load == 1:
+        for i in range(total_models):
+            current_pool[i].load_weights(load_location + str(i) + ".keras")
+
 theApp = App()
 while True:
 
@@ -305,9 +300,9 @@ while True:
     print("Higest score: " + str(max(score)) + " Model: " + str(score.index(max(score))) + " Gen: " + str(generation))
     
     # Write these values to a file
-    fi = open("results.txt", "a+")
-    fi.write("Higest score: " + str(max(score)) + " Model: " + str(score.index(max(score))) + " Gen: " + str(generation))
-    fi.close()
+    #fi = open("results.txt", "a+")
+    #fi.write("Higest score: " + str(max(score)) + " Model: " + str(score.index(max(score))) + " Gen: " + str(generation) + "\r\n")
+    #fi.close()
 
     # Save pool
     if save == 1:
