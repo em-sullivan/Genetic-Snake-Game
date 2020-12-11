@@ -15,14 +15,13 @@ from pygame.locals import *
 total_models = 50
 current_pool = []
 fitness = []
-generation = 1
-top_fits = total_models // 5
+generation = 264
 
 # 1 if want to save pool, 0 if not
 save = 0
 save_location = "Saved_Models/model"
-load = 0
-load_location = "Saved_Models-ok/model"
+load = 1
+load_location = "Saved_Models-better/model"
 
 # Game configurations
 WIDTH = 480
@@ -30,7 +29,7 @@ HEIGHT = 480
 GRID_D = 12
 BLOCK_W = WIDTH / GRID_D
 BLOCK_H = HEIGHT / GRID_D
-MAX_MOVES = 100
+MAX_MOVES = 150
 score = []
 
 # Save models to file
@@ -98,9 +97,22 @@ def model_mutate(weights):
     
     return weights
 
-def genetic_updates():
-    print("I am a work in progress")
+def roulette_selection(total_fitness):
+    global fitness
+    choice = random.randint(0, total_fitness)
+    parent = 0
 
+    current = 0
+    for idx in range(total_models):
+        current += fitness[idx]
+        if current > choice:
+            parent = idx
+            break
+
+    return parent
+
+
+def genetic_updates():
     global current_pool
     global fitness
     global generation
@@ -109,28 +121,11 @@ def genetic_updates():
     # Calculate total fitness
     total_fitness = sum(fitness)
     
-    # Crossover_time
+    # Breeding time
     for i in range(total_models // 2):
-        choice_1 = random.randint(0, total_fitness)
-        choice_2 = random.randint(0, total_fitness)
-        parent_1 = -1
-        parent_2 = -1
-
-        # Pick 1st parent
-        current = 0
-        for idx in range(total_models):
-            current += fitness[idx]
-            if current >= choice_1:
-                parent_1 = idx
-                break
-        
-        # Pick 2nd parent
-        current = 0
-        for idx in range(total_models):
-            current += fitness[idx]
-            if current >= choice_2:
-                parent_2 = idx
-                break
+        # Pick two parents
+        parent_1 = roulette_selection(total_fitness)
+        parent_2 = roulette_selection(total_fitness)
   
         # Model crossover between two parents
         new = model_crossover(parent_1, parent_2)
@@ -193,9 +188,11 @@ class App:
         # Change direction of snake
         if event.type == pygame.KEYDOWN:
             if event.key == K_UP:
+                # Increase speed of game
                 if self.frames < 1000000000:
                     self.frames *= 10
             elif event.key == K_DOWN:
+                # Decrease speed of game
                 if self.frames > 10:
                     self.frames /= 10
             elif event.key == K_p:
@@ -209,15 +206,15 @@ class App:
         if self.snake.alive is False:
             return
         if self.snake.eat(self.fruit) is True:
+            # Adjust fitness, reset move counter
             fitness[model_num] += 150
             score[model_num] += 1
             self.moves = 0
         self.snake.update()
         
         if check_if_closer(self.snake, self.fruit):
+            # Reward snake for moving towards fruit
             fitness[model_num] += 10
-        else:
-            fitness[model_num] -= 0
 
         self.moves += 1
     
@@ -300,9 +297,9 @@ while True:
     print("Higest score: " + str(max(score)) + " Model: " + str(score.index(max(score))) + " Gen: " + str(generation))
     
     # Write these values to a file
-    #fi = open("results.txt", "a+")
-    #fi.write("Higest score: " + str(max(score)) + " Model: " + str(score.index(max(score))) + " Gen: " + str(generation) + "\r\n")
-    #fi.close()
+    # fi = open("results.txt", "a+")
+    # fi.write("Higest score: " + str(max(score)) + " Model: " + str(score.index(max(score))) + " Gen: " + str(generation) + "\r\n")
+    # fi.close()
 
     # Save pool
     if save == 1:

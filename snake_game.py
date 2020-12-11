@@ -122,20 +122,11 @@ class Snake:
 
 
     def check_fruit(self, fruit):
+        '''
+        Returns a numpy array based on the postion
+        of the fruit.
+        '''
         hit = np.array([0, 0, 0, 0])
-        '''
-        head_x = self.position[0][0]
-        head_y = self.position[0][1]
-
-        if ([head_x + self.speed, head_y] == fruit.pos):
-            hit[0] = 1
-        if ([head_x - self.speed, head_y] == fruit.pos):
-            hit[1] = 1
-        if ([head_x, head_y - self.speed] == fruit.pos):
-            hit[2] = 1
-        if ([head_x, head_y + self.speed] == fruit.pos):
-            hit[3] = 1
-        '''
         x_dis = fruit.pos[0] - self.position[0][0]
         y_dis = fruit.pos[1] - self.position[0][1]
 
@@ -149,10 +140,12 @@ class Snake:
             hit[2] = 1
 
         return hit  
-        
-        return hit
     
     def eat(self, fruit):
+        '''
+        Checks if snake can eat fruit. If it can, it exapnds its body
+        and returns True, which lets it known that the fruit was eaten
+        '''
         
         # Checks if head is going to eat fruit
         x = self.position[0][0]
@@ -262,8 +255,8 @@ class App:
             return
         self.snake.eat(self.fruit)
         self.snake.update()
-        print(self.snake.check_head())
-        #print(self.snake.check_fruit(self.fruit))
+        #print(self.snake.check_head())
+        print(self.snake.check_fruit(self.fruit))
     
     def on_render(self):
         self._display_surf.fill((0,124,0))
