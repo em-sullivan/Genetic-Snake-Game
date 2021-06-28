@@ -138,7 +138,6 @@ def genetic_updates():
 
     # Set new weights, reset fitness
     for i in range(len(new_weights)):
-        fitness[i] = -100
         current_pool[i].set_weights(new_weights[i])
 
     generation += 1
